@@ -153,7 +153,10 @@ void editor_process_key_press()
 		case CTRL_KEY('q') : 
 			if(E.dirty) {
 				editor_set_status_message("Save changes to %s before closing(y,n,esc)", E.file_name);
-				int c = editor_read_key();
+				editor_refresh_screen();
+				
+				 c = editor_read_key();
+				
 				if(c == 'y') editor_save();
 				else if(c == 'n') {
 					write(STDOUT_FILENO, "\x1b[2J", 4); // clears entire screen
