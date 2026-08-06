@@ -6,6 +6,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
 
 char* editor_prompt(char *prompt, void (*call_back)(char *, int)) {
 	size_t buf_size = 128;
@@ -15,7 +16,7 @@ char* editor_prompt(char *prompt, void (*call_back)(char *, int)) {
 
 	while(1) {
 		editor_set_status_message(prompt, buf);
-		editor_refresh_screen();
+		editor_refresh_screen(); // why write the whole screen instead of just the status bar?
 
 		int c = editor_read_key();
 		if(c == DEL_KEY ||c == CTRL_KEY('h') || c == BACKSPACE) {
@@ -55,7 +56,7 @@ void editor_move_cursor(int key)
 			if(E.cx != 0) {
 				E.cx--;
 			}
-			else if(E.cy > 0) { // if the curser is at the start of an empty line
+			else if(E.cy > 0) { // if the cursor is at the start of an empty line
 				E.cy--;
 				E.cx = E.row[E.cy].size;
 			}
@@ -167,6 +168,7 @@ void editor_process_key_press()
 			
 		case HOME_KEY:
 			E.cx = 0;
+			E.cy = 0;
 			break;
 		case END_KEY:
 			if(E.cy < E.num_rows)
@@ -195,9 +197,6 @@ void editor_process_key_press()
 					if(E.cy > E.num_rows) E.cy = E.num_rows;
 				}
 				
-				int times = E.screen_rows;
-				while(times--)
-					editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
 			}
 			break;
 			
@@ -256,7 +255,7 @@ void editor_find_call_back(char *query, int key) {
 		if(current == -1) current = E.num_rows - 1;
 		else if(current == E.num_rows) current = 0;
 		
-		e_row *row = &E.row[current];
+		e_row *row = &E.row[current];        
 		char *match = strstr(row->render, query);
 		if(match) {
 			last_match = current;
@@ -267,7 +266,7 @@ void editor_find_call_back(char *query, int key) {
 			saved_hl_line = current;
 			saved_hl = malloc(row->r_size);
 			memcpy(saved_hl, row->hl, row->r_size);
-			memset(&row->hl[match - row->render], HL_MATCH, strlen(query));
+			memset(&row->hl[match - row->render], HL_MATCH, strlen(query)); // highlighting the query
 			break;
 		}
 	}
@@ -290,3 +289,4 @@ void editor_find() {
 		E.row_off = saved_row_off;
 	}
 }
+ 

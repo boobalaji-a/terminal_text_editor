@@ -19,7 +19,7 @@ void init_editor() {
  	E.syntax = NULL;
  	
  	if(get_window_size(&E.screen_rows, &E.screen_cols) == -1) die("get_window_size");
-	E.screen_rows -= 2;
+	E.screen_rows -= 2; // decrementing screen_rows by 2 because last two lines ar reserved for status bar
  }
  
 void editor_insert_char(int c) {
@@ -37,7 +37,7 @@ void editor_insert_new_line() {
 	else {
 		e_row *row = &E.row[E.cy];
 		editor_insert_row(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
-		row = &E.row[E.cy]; // reduntant ??
+		row = &E.row[E.cy]; 
 		row->size = E.cx;
 		row->chars[row->size] = '\0';
 		editor_update_row(row);
@@ -47,7 +47,11 @@ void editor_insert_new_line() {
 }
 
 void editor_del_char() {
-	if(E.cy == E.num_rows) return;
+	if(E.cy == E.num_rows) {
+		E.cy--;
+		E.cx = E.row[E.cy].r_size;
+		return;
+	}
 	if(E.cx == 0 && E.cy == 0) return;
 	
 	e_row *row = &E.row[E.cy];

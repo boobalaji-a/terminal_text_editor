@@ -1,1 +1,4 @@
 *.elf
+*.java
+*.py
+*.txt

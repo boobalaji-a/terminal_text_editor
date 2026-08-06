@@ -2,6 +2,8 @@
 #include "editor.h"
 
 char *C_HL_extensions[] = {".c", ".h", ".cpp", NULL};
+char *PYTHON_HL_extensions[] = {".py", NULL};
+char *JAVA_HL_extensions[] = {".java", NULL};
 
 char *C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else",
@@ -9,6 +11,25 @@ char *C_HL_keywords[] = {
 	
 	"int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
 	"void|", NULL
+};
+
+char *PYTHON_HL_keywords[] = {
+ 	"False", "None", "True", "and", "as", "assert", "async", "await",
+    "break", "class", "continue", "def", "del", "elif", "else", "except",
+    "finally", "for", "from", "global", "if", "import", "in", "is",
+    "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try",
+    "while", "with", "yield", NULL
+};
+
+char *JAVA_HL_keywords[] = {
+ 	"abstract", "assert", "break", "case", "catch", "class", "const", "continue",
+    "default", "do", "else", "enum", "extends", "final", "finally", "for","goto",
+    "if", "implements", "import", "instanceof","interface","native", "new", "package",
+    "private", "protected", "public", "return", "static", "strictfp", "super", "switch",
+    "synchronized", "this", "throw", "throws", "transient", "try", "volatile","while",
+
+    "boolean|", "byte|", "char|", "double|", "float|",   "int|", 
+     "long|", "short|","void|", NULL
 };
 
 struct editor_syntax HLDB[] = {
@@ -19,6 +40,22 @@ struct editor_syntax HLDB[] = {
 		"//", "/*", "*/",
 		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
 	},
+	
+	{
+		"py",
+		PYTHON_HL_extensions,
+		PYTHON_HL_keywords,
+		"#", NULL, NULL,
+		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
+	},
+
+	{
+		"java",
+		JAVA_HL_extensions,
+		JAVA_HL_keywords,
+		"//", "/*", "*/",
+		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
+	}
 };
 
 int is_separator(int c) {
@@ -48,8 +85,12 @@ void editor_update_syntax(e_row *row) {
 	int i = 0;
 	while(i < row->r_size) {
 		char c = row->render[i];
-		unsigned char prev_hl = (i < 0) ? row->hl[i - 1] : HL_NORMAL;
+		unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
 
+		if(is_separator(c) && !in_comment && !in_string) {
+			row->hl[i] = HL_SEPARATOR;
+		}
+		
 		if(scs_len && !in_string && !in_comment) {
 			if(!strncmp(&row->render[i], scs, scs_len)) {
 				memset(&row->hl[i], HL_COMMENT, row->r_size - i);
@@ -72,7 +113,7 @@ void editor_update_syntax(e_row *row) {
 					continue;
 				}
 			}
-			else if(!strncmp(&row->render[i], mcs, mcs_len)) {
+			else if(!strncmp(&row->render[i], mcs, mcs_len)) { //check for  what case it is
 				memset(&row->hl[i], HL_MLCOMMENT, mcs_len);
 				i += mcs_len;
 				in_comment = 1;
@@ -83,9 +124,9 @@ void editor_update_syntax(e_row *row) {
 		if(E.syntax->flags & HL_HIGHLIGHT_STRINGS) {
 			if(in_string) {
 				row->hl[i] = HL_STRING;
-				if(c == '\\' && i + 1 < row->r_size) {
+				if(c == '\\' && i + 1 < row->r_size) { // coloring for the escape charater
 					row->hl[i + 1] = HL_STRING;
-					i += 2;
+					i += 2; 
 					continue;
 				}
 				if(c == in_string) in_string = 0;
@@ -146,6 +187,7 @@ int editor_syntax_to_color(int hl) {
 		case HL_COMMENT: 
 		case HL_MLCOMMENT: return 36;
 		case HL_KEYWORD1: return 33;
+		case HL_SEPARATOR:
 		case HL_KEYWORD2: return 32;
 		case HL_STRING: return 35;
 		case HL_NUMBER: return 31;
@@ -158,14 +200,14 @@ void editor_select_syntax_highlight() {
 	E.syntax = NULL;
 	if(E.file_name == NULL) return;
 
-	char *ext = strrchr(E.file_name, '.');
+	char *extension = strrchr(E.file_name, '.');
 
 	for(unsigned int j = 0; j < HLDB_ENTRIES; j++) {
 		struct editor_syntax *s = &HLDB[j];
 		unsigned int i = 0;
 		while(s->file_match[i]) {
-			int is_ext = (s->file_match[i][0] == '.');
-			if((is_ext && ext && !strcmp(ext, s->file_match[i])) || (!is_ext && strstr(E.file_name, s->file_match[i]))) {
+			int is_extension = (s->file_match[i][0] == '.');
+			if((is_extension && extension && !strcmp(extension, s->file_match[i])) || (!is_extension && strstr(E.file_name, s->file_match[i]))) {
 				E.syntax = s;
 
 				int file_row;
@@ -173,7 +215,7 @@ void editor_select_syntax_highlight() {
 					editor_update_syntax(&E.row[file_row]);
 				}
 				
-				return;
+				return; 
 			}
 			i++;
 		}

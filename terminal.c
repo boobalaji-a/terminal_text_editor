@@ -1,3 +1,9 @@
+#include <termios.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+
 #include "terminal.h"
 #include "editor.h"
 
@@ -9,7 +15,7 @@ void die(const char *s) {
 }
 
 void disable_raw_mode(){
-	tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios);
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios); // resets the changes made to the terminal attributes
 }
 
 void enable_raw_mode() {
@@ -22,8 +28,8 @@ void enable_raw_mode() {
  	raw.c_oflag &= ~(OPOST);
  	raw.c_cflag |= (CS8);
  	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
- 	raw.c_cc[VMIN] = 0;
- 	raw.c_cc[VTIME] = 1;
+ 	raw.c_cc[VMIN] = 0; // VMIN specifies minimum no of  bytes read() takes before it returns
+ 	raw.c_cc[VTIME] = 1; // VTIME specifies minimum of time read() takes before it returns
  	
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 }
@@ -50,7 +56,7 @@ int get_cursor_position(int *rows, int *cols) {
 int get_window_size(int *rows, int *cols){
 	struct winsize ws;
 	
-	if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+	if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {  // TIOCGWINSZ: Terminal Input/Output Control Get Window Size
 		if(write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
 		return get_cursor_position(rows, cols);
 	}

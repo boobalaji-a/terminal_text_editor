@@ -24,6 +24,8 @@ enum editor_highlight {
 	HL_KEYWORD2,
 	HL_STRING,
 	HL_NUMBER,
+	HL_SEPARATOR,
+	HL_HEADER,
 	HL_MATCH
 };
 

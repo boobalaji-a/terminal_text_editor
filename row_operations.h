@@ -3,17 +3,18 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define KILO_TAB_STOP 8
 
 typedef struct e_row{ // buffer type where all the lines from the input file are added
-	int idx;
-	int size;
-	int r_size; 
+	int idx; // index of the row element
+	int size; // size of the chars field of row element
+	int r_size;  //size of render field of row element
 	char *chars; // contains only printable characters of teh input file
 	char *render; // contains non - printable character too
-	unsigned char *hl;
-	int hl_open_comment;
+	unsigned char *hl; // colour code of the row element
+	int hl_open_comment; 
 } e_row;
 
 int editor_row_cx_to_rx(e_row*, int);

@@ -23,9 +23,10 @@ void ab_free(struct abuf *ab){
  	free(ab->b);
  }
 
-void editor_scroll() {
+/*** Function to adjust cursor position ***/
+void editor_scroll() { 
 	E.rx = E.cx; 
-
+	
 	if(E.cy < E.num_rows) {
 		E.rx = editor_row_cx_to_rx(&E.row[E.cy], E.cx);
 	}
@@ -51,7 +52,7 @@ void editor_draw_rows(struct abuf *ab)
 {
 	for(int i = 0; i < E.screen_rows; i++)
 	{
-		int file_row = i + E.row_off; // file_row variable acts as index e_row row
+		int file_row = i + E.row_off; // file_row variable acts as index to e_row row elements
 		if(file_row >= E.num_rows) {
 			if(E.num_rows == 0 && i == E.screen_rows / 3) {
 				char welcome_msg[80];
@@ -110,7 +111,7 @@ void editor_draw_rows(struct abuf *ab)
 			ab_append(ab, "\x1b[39m", 5);
 		}
 
-		ab_append(ab, "\x1b[K", 3);
+		ab_append(ab, "\x1b[K", 3); // clear line from cursor right
 		ab_append(ab, "\r\n", 2);
 		}
 }
@@ -118,13 +119,13 @@ void editor_draw_rows(struct abuf *ab)
 void editor_draw_status_bar(struct abuf *ab) {
 	ab_append(ab, "\x1b[7m", 4); // inverts background (makes text look highlighted)
 	char status[80]; // buffer to display the file name and no of line the file contains
-	char  r_status[80]; // buffer to display the cursor position
+	char  r_status[80]; // buffer to display file type and cursor line
 	int len = snprintf(status, sizeof(status), "%.20s - %d lines %s", E.file_name ? E.file_name : "[No Name]", E.num_rows, E.dirty ? "(modified)" : "");
 	int r_len = snprintf(r_status, sizeof(r_status), "%s | %d %d", E.syntax ? E.syntax->file_type : "no ft", E.cy +1, E.num_rows);
 	
 	if(len > E.screen_cols) len = E.screen_cols;
 	ab_append(ab, status, len);
-	while(len < E.screen_cols) {
+	while(len < E.screen_cols) { // moving thefile type and cursor line number to the far right
 		if(E.screen_cols - len == r_len) {
 			ab_append(ab, r_status, r_len);
 			break;
@@ -135,7 +136,7 @@ void editor_draw_status_bar(struct abuf *ab) {
 		}
 	}
 
-	ab_append(ab, "\x1b[m", 3);
+	ab_append(ab, "\x1b[m", 3); // turnoff character attributes
 	ab_append(ab, "\r\n", 2);
 }
 
@@ -143,7 +144,7 @@ void editor_draw_message_bar(struct abuf *ab) {
 	ab_append(ab, "\x1b[K", 3); // clears line from cursor right
 	int msg_len = strlen(E.status_msg);
 	if (msg_len > E.screen_cols) msg_len = E.screen_cols;
-	if (msg_len && time(NULL) - E.status_msg_time < 5)
+	if (msg_len && (time(NULL) - E.status_msg_time < 5))
 		ab_append(ab, E.status_msg, msg_len);
 }
 
@@ -161,10 +162,12 @@ void editor_refresh_screen()
 	editor_draw_message_bar(&ab);
 
 	char buf[32];
+	
+	/*** Move the cursor to the location where editing occurs ***/
 	snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.row_off) + 1, (E.rx - E.col_off)  + 1);
 	ab_append(&ab, buf, strlen(buf));
 
-	ab_append(&ab, "\x1b[?25h", 6);
+	ab_append(&ab, "\x1b[?25h", 6); // show cursor
 	
 	write(STDOUT_FILENO, ab.b, ab.len); // printing out everything that has been appended to the abuf buffer
 

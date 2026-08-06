@@ -26,6 +26,7 @@ int editor_row_rx_to_cx(e_row *row, int rx) {
 	return cx;
 }
 
+/*** Function to update render field once a new line inserted ***/
 void editor_update_row(e_row *row) {
 	int tabs = 0;
 	int j;
@@ -33,33 +34,32 @@ void editor_update_row(e_row *row) {
 		if(row->chars[j] == '\t') tabs++;
 		
 	free(row->render);
-	row->render = malloc(row->size + tabs*(KILO_TAB_STOP - 1) + 1);
-
-	int idx = 0;
+	row->render = malloc(row->size + tabs*(KILO_TAB_STOP - 1) + 1); 
+	int i = 0;
 	for(j = 0; j < row->size; j++) {
 		if(row->chars[j] == '\t') {
-			row->render[idx++] = ' ';
-			while(idx % KILO_TAB_STOP != 0) row->render[idx++] = ' '; // max characters needed for each tab is 8
+			row->render[i++] = ' ';
+			while(i % KILO_TAB_STOP != 0) row->render[i++] = ' '; // space characters needed for each tab is 8
 		}
 		else {
-			row->render[idx++] = row->chars[j];
+			row->render[i++] = row->chars[j];
 		}
 	}
-	row->render[idx] = '\0';
-	row->r_size = idx;
+	row->render[i] = '\0';
+	row->r_size = i;
 
-	editor_update_syntax(row);  
+	editor_update_syntax(row); 
+	 
 }
 
 void editor_insert_row(int at, char *s, size_t len) {
 	if(at < 0 || at > E.num_rows) return;
 
-	E.row = realloc(E.row, sizeof(e_row) * (E.num_rows + 1));
-	memmove(&E.row[at + 1], &E.row[at], sizeof(e_row) * (E.num_rows - at));
-	for(int j = at + 1; j <= E.num_rows; j++) E.row[j].idx++;
-	
-	E.row[at].idx = at;
-	
+	E.row = realloc(E.row, sizeof(e_row) * (E.num_rows + 1)); // allocating extra space for the new row
+	memmove(&E.row[at + 1], &E.row[at], sizeof(e_row) * (E.num_rows - at)); // moving the contents of the current line to new line
+	for(int j = at + 1; j <= E.num_rows; j++) E.row[j].idx++; // incrementing the idx of every row below the inserted row
+
+    E.row[at].idx = at; 
 	E.row[at].size = len;
 	E.row[at].chars = malloc(len + 1);
 	memcpy(E.row[at].chars, s, len);
@@ -69,6 +69,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 	E.row[at].render = NULL;
 	E.row[at].hl = NULL;
 	E.row[at].hl_open_comment = 0;
+	
 	editor_update_row(&E.row[at]);
 	
 	E.num_rows++;
@@ -84,7 +85,7 @@ void editor_free_row(e_row *row) {
 void editor_del_row(int at) {
 	if(at < 0 || at >= E.num_rows) return;
 	editor_free_row(&E.row[at]);
-	memmove(&E.row[at], &E.row[at + 1], sizeof(e_row) * (E.num_rows - at -1));
+	memmove(&E.row[at], &E.row[at + 1], sizeof(e_row) * (E.num_rows - at - 1));
 	for(int j = at; j < E.num_rows - 1; j++) E.row[j].idx--;
 	E.num_rows--;
 	E.dirty++;
@@ -95,7 +96,7 @@ void editor_row_insert(e_row *row, int at, int c) {
 	row->chars = realloc(row->chars,row->size + 2);
 
 	/* moving the charcaters to the right of the position where the
-	 charcater is inserted */
+	 character is inserted */
 	memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
 	row->size++;
 	row->chars[at] = c;

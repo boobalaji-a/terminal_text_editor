@@ -63,7 +63,7 @@ void editor_save() {
 			editor_set_status_message("Save aborted");
 			return;
 		}
-		editor_select_syntax_highlight();
+		editor_select_syntax_highlight(); // change the highlighting according to file type
 	}
 
 	int len;
@@ -73,8 +73,8 @@ void editor_save() {
 	standard permissions required for the text file*/
 	
 	int fd = open(E.file_name, O_RDWR | O_CREAT, 0644);
-	if(fd !=-1) {
-		if(ftruncate(fd, len) != -1) { // trucates or adds zero the file to a specific size
+	if(fd != -1) {
+		if(ftruncate(fd, len) != -1) { // truncates or adds zero the file to a specific size
 			if(write(fd, buf, len) == len) {
 				close(fd);
 				free(buf);
