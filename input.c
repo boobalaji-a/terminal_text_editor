@@ -19,7 +19,7 @@ char* editor_prompt(char *prompt, void (*call_back)(char *, int)) {
 		editor_refresh_screen(); // why write the whole screen instead of just the status bar?
 
 		int c = editor_read_key();
-		if(c == DEL_KEY ||c == CTRL_KEY('h') || c == BACKSPACE) {
+		if(c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
 			if(buf_len != 0) buf[--buf_len] = '\0';
 		}
 		else if(c == '\x1b') {
@@ -142,7 +142,6 @@ int  editor_read_key() {
 
 void editor_process_key_press()
 {
-	static int quit_count = KILO_QUIT_COUNT;
 	
 	int c = editor_read_key(); // reads the character input 
 	switch(c)
@@ -152,15 +151,20 @@ void editor_process_key_press()
 			break;
 			
 		case CTRL_KEY('q') : 
-			if(E.dirty && quit_count > 0) {
-				editor_set_status_message("WARNING!!! File has unsaved changes. ""Press Ctrl-Q %d more times to quit without changes.", quit_count);
-				quit_count--;
+			if(E.dirty) {
+				editor_set_status_message("Save changes to %s before closing(y,n,esc)", E.file_name);
+				int c = editor_read_key();
+				if(c == 'y') editor_save();
+				else if(c == 'n') {
+					write(STDOUT_FILENO, "\x1b[2J", 4); // clears entire screen
+					write(STDOUT_FILENO, "\x1b[H", 3); // moves the cursor to top left
+					exit(0);
+				}		
 				return;
 			}
 			write(STDOUT_FILENO, "\x1b[2J", 4); // clears entire screen
 			write(STDOUT_FILENO, "\x1b[H", 3); // moves the cursor to top left
 			exit(0);
-			break;
 
 		case CTRL_KEY('s'):
 			editor_save();
@@ -215,7 +219,6 @@ void editor_process_key_press()
 			break;
 	}
 
-	quit_count = KILO_QUIT_COUNT;
 }
 
 void editor_find_call_back(char *query, int key) {

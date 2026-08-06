@@ -71,15 +71,19 @@ void editor_save() {
 
 	/* opening the file in R/W mode, 0644 is code for 
 	standard permissions required for the text file*/
-	
+//	printf("Hi4");
 	int fd = open(E.file_name, O_RDWR | O_CREAT, 0644);
 	if(fd != -1) {
-		if(ftruncate(fd, len) != -1) { // truncates or adds zero the file to a specific size
+//	printf("Hi5");
+		if(ftruncate(fd, len) != -1) {
+	//	printf("Hi6"); // truncates or adds zero the file to a specific size
 			if(write(fd, buf, len) == len) {
+			//printf("Hi7");
 				close(fd);
 				free(buf);
 				E.dirty = 0;
 				editor_set_status_message("%d bytes written to disk", len);
+				//printf("Hi8");
 				return;
 			}
 		}
@@ -87,5 +91,6 @@ void editor_save() {
 	}
 
 	free(buf);
+//	printf("Hi9");
 	editor_set_status_message("Can't save! I/O error: %s", strerror(errno));
 }

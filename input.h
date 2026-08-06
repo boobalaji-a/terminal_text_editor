@@ -1,7 +1,6 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#define KILO_QUIT_COUNT 3
 #include "editor.h"
 
 char *editor_prompt(char *, void (*callback)(char *, int));
