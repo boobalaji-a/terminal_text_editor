@@ -19,6 +19,8 @@ enum editor_key {
   DEL_KEY,
   HOME_KEY,
   END_KEY,
+  HOME_KEY1,
+  END_KEY1,
   PAGE_UP,
   PAGE_DOWN
 };
