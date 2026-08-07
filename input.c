@@ -152,18 +152,27 @@ void editor_process_key_press()
 			
 		case CTRL_KEY('q') : 
 			if(E.dirty) {
-				editor_set_status_message("Save changes to %s before closing(y,n,esc)", E.file_name);
+				editor_set_status_message("Save changes to %s before closing (y,n,esc)", E.file_name);
 				editor_refresh_screen();
-				
-				 c = editor_read_key();
-				
-				if(c == 'y') editor_save();
-				else if(c == 'n') {
-					write(STDOUT_FILENO, "\x1b[2J", 4); // clears entire screen
-					write(STDOUT_FILENO, "\x1b[H", 3); // moves the cursor to top left
-					exit(0);
-				}		
-				return;
+				char buf[32];
+				snprintf(buf, sizeof(buf), "\x1b[%d;%ldH", E.screen_rows + 2, 42 + strlen(E.file_name));
+				write(STDOUT_FILENO, buf, strlen(buf));
+		
+				do {
+					c = editor_read_key();
+					if(c == 'y') {
+						editor_save();
+					}
+					else if(c == 'n') {
+						write(STDOUT_FILENO, "\x1b[2J", 4); 
+						write(STDOUT_FILENO, "\x1b[H", 3); 
+						exit(0);
+					}		
+					else if (c == '\x1b') {
+						editor_set_status_message("");
+						return;
+					}
+				} while(c != 'y' && c != 'n' && c != '\x1b');
 			}
 			write(STDOUT_FILENO, "\x1b[2J", 4); // clears entire screen
 			write(STDOUT_FILENO, "\x1b[H", 3); // moves the cursor to top left
@@ -195,16 +204,17 @@ void editor_process_key_press()
 			
 		case PAGE_UP:
 		case PAGE_DOWN:
-			{
-				if(c == PAGE_UP) {
-					E.cy = E.row_off;
-				}
-				else if(c == PAGE_DOWN) {
-					E.cy = E.row_off + E.screen_rows - 1;
-					if(E.cy > E.num_rows) E.cy = E.num_rows;
-				}
-				
-			}
+		{
+			if (c == PAGE_UP) {
+				 E.cy = E.row_off;
+		} else if (c == PAGE_DOWN) {
+			E.cy = E.row_off + E.screen_rows - 1;
+			if (E.cy > E.num_rows) E.cy = E.num_rows;
+		}
+			int times = E.screen_rows;
+			while (times--)
+				editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+		}
 			break;
 			
 			case ARROW_UP:
