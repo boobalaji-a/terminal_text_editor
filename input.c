@@ -239,6 +239,10 @@ void editor_process_key_press()
 				editor_move_cursor(c);
 				break;
 
+			case CTRL_KEY('?'): // single line commenting
+				editor_insert_char('/');
+				editor_insert_char('/');
+				break;
 			case CTRL_KEY('l'):
 			case '\x1b':
 					break;
