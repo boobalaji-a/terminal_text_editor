@@ -96,14 +96,14 @@ int  editor_read_key() {
     	if (nread == -1 && errno != EAGAIN) die("read");
   	}
 	if (c == '\x1b') {
-    char seq[3];
+    char seq[5];
     
-    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';		
     if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
     if (seq[0] == '[') {
     	if(seq[1] >= '0' && seq[1] <= '9'){
-    		if(read(STDOUT_FILENO, &seq[2], 1) != 1) return '\x1b';
-    		if(seq[2] = '~') {
+    		if(read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b';
+    		if(seq[2] == '~') {
     			switch(seq[1]) {
     				case '1': return HOME_KEY;
     				case '3': return DEL_KEY;
@@ -112,6 +112,14 @@ int  editor_read_key() {
     				case '6': return PAGE_DOWN;
     				case '7': return HOME_KEY;
     				case '8': return END_KEY;
+    			}
+    		}
+    		else if(seq[2] == ';'){
+    			if(read(STDIN_FILENO, &seq[3], 1) != 1) return '\x1b';
+    			if(read(STDIN_FILENO, &seq[4], 1) != 1) return '\x1b';
+    			switch(seq[4]) {
+    				case 'H': return HOME_KEY1;
+    				case 'F': return END_KEY1;
     			}
     		}
     	}
@@ -184,13 +192,19 @@ void editor_process_key_press()
 			
 		case HOME_KEY:
 			E.cx = 0;
-			E.cy = 0;
 			break;
 		case END_KEY:
 			if(E.cy < E.num_rows)
 				E.cx = E.row[E.cy].size;
 			break;
-
+		case HOME_KEY1:
+			E.cx = 0;
+			E.cy = 0;
+			break;
+		case END_KEY1:
+			E.cx = E.row[E.num_rows - 1].r_size;
+			E.cy = E.num_rows - 1;
+			break;
 		case CTRL_KEY('f'):
 			editor_find();
 			break;
@@ -207,9 +221,10 @@ void editor_process_key_press()
 		{
 			if (c == PAGE_UP) {
 				 E.cy = E.row_off;
-		} else if (c == PAGE_DOWN) {
-			E.cy = E.row_off + E.screen_rows - 1;
-			if (E.cy > E.num_rows) E.cy = E.num_rows;
+		} 
+			else if (c == PAGE_DOWN) {
+				E.cy = E.row_off + E.screen_rows - 1;
+				if (E.cy > E.num_rows) E.cy = E.num_rows;
 		}
 			int times = E.screen_rows;
 			while (times--)
@@ -225,7 +240,7 @@ void editor_process_key_press()
 				break;
 
 			case CTRL_KEY('l'):
-				case '\x1b':
+			case '\x1b':
 					break;
 		default :
 			editor_insert_char(c);
